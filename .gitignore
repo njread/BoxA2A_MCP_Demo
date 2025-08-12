@@ -1,5 +1,5 @@
-# Box Configuration (Sensitive)
-box_jwt_config.json
+# Box Configuration (Sensitive) - Temporarily allowing JWT config for deployment
+# box_jwt_config.json
 *.jwt
 *.pem
 *.key
