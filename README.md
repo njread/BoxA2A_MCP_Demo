@@ -15,7 +15,7 @@ A professional enterprise content discovery assistant powered by Gemini, special
 1. **Box Search** - Find documents and files across your Box enterprise
 2. **Box AI Ask** - Ask questions about specific file content using Box AI
 3. **Box Hub Ask** - Automatically discover and use the most relevant knowledge hub
-4. **Weather** - Location-based weather queries
+
 
 ## 🏗️ Architecture
 
