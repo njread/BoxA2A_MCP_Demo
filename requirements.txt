@@ -1,0 +1,11 @@
+a2a-sdk
+google-generativeai
+uvicorn
+python-dotenv
+asyncclick
+requests
+boxsdk[jwt]
+
+gunicorn
+google-cloud-aiplatform
+google-adk
