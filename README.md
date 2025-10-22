@@ -1,6 +1,6 @@
 # A2A CR Box - Enterprise Content Discovery Agent
 
-A professional enterprise content discovery assistant powered by Gemini, specializing in Box content search and enterprise document management.
+A professional enterprise content discovery assistant powered by Gemini, specializing in Box content search, AI analysis, document generation, FOIA compliance, and MCP integration.
 
 ## 🚀 Features
 
@@ -9,6 +9,8 @@ A professional enterprise content discovery assistant powered by Gemini, special
 - **Box AI Ask**: Ask intelligent questions about specific file content
 - **Box Hub Ask**: Automatically discover and use the most relevant Box Hub
 - **Box Doc Gen**: Generate professional capital call notices and other documents using templates
+- **Box MCP Integration**: Leverage Box MCP Remote Server for enhanced AI capabilities and cross-platform integration
+- **FOIA Compliance**: Apply FOIA metadata templates and generate compliance reports
 - **Enterprise Content Discovery**: Locate specific documents, regulatory files, reports, and business content
 - **Professional Communication**: Business-appropriate responses with enterprise focus
 
@@ -17,6 +19,9 @@ A professional enterprise content discovery assistant powered by Gemini, special
 2. **Box AI Ask** - Ask questions about specific file content using Box AI
 3. **Box Hub Ask** - Automatically discover and use the most relevant knowledge hub
 4. **Box Doc Gen** - Generate capital call notices and other documents using Box Doc Gen API
+5. **Box MCP Tools** - Enhanced AI capabilities through Box MCP Remote Server
+6. **FOIA Processing** - Apply compliance metadata and generate audit reports
+7. **Capital Call Workflow** - Complete workflow for capital call notice creation
 
 
 ## 🏗️ Architecture
@@ -220,13 +225,40 @@ User: "What are our company policies?"
 Agent: [Automatically discovers relevant hubs and provides answers from the best knowledge base]
 ```
 
-### Box Doc Gen
+### Box MCP Integration
 ```
-User: "Create capital call notices for Fund III"
-Agent: [Guides through template selection, data preparation, and document generation]
+User: "Search for Project Phoenix files using MCP"
+Agent: [Uses Box MCP Remote Server for enhanced search with advanced filtering]
 
-User: "List available templates"
-Agent: [Shows available document templates with IDs and details]
+User: "Analyze this document with Box AI via MCP"
+Agent: [Leverages Box AI through MCP for deeper document analysis]
+
+User: "Extract structured data from this file via MCP"
+Agent: [Uses Box MCP to convert unstructured documents into structured data]
+
+User: "Get project status from Box Hub via MCP"
+Agent: [Provides project-level insights using Box Hub analysis via MCP]
+```
+
+### FOIA Compliance Processing
+```
+User: "Apply FOIA metadata to Project Phoenix folder"
+Agent: [Applies FOIA retention template to all relevant files]
+
+User: "Generate FOIA compliance report"
+Agent: [Creates comprehensive audit trail and compliance documentation]
+
+User: "Help me with FOIA workflow"
+Agent: [Guides through complete FOIA request processing workflow]
+```
+
+### Capital Call Notice Creation
+```
+User: "Help me create capital call notices"
+Agent: [Guides through complete workflow from template selection to document generation]
+
+User: "Find templates for capital call notices"
+Agent: [Discovers available templates and provides guidance]
 
 User: "Show me sample LP data structure"
 Agent: [Provides comprehensive sample data structure for capital call notices]
@@ -270,8 +302,14 @@ A2A_CR_Box/
 ├── box_ai_ask.py         # Box AI file analysis
 ├── box_hub_ask.py        # Box Hub discovery and querying
 ├── box_doc_gen.py        # Box Doc Gen for capital call notices
+├── box_mcp_client.py     # Box MCP Remote Server integration
+├── foia_processor.py     # FOIA compliance and metadata processing
+├── box_batch_summarize.py # Batch summarization tools
+├── simple_summarize.py   # Simple summarization utilities
 ├── requirements.txt      # Python dependencies
 ├── deploy.sh            # Cloud Run deployment script
+├── box_jwt_config.example.json # JWT configuration template
+├── box_jwt_secrets_setup.sh   # Secret Manager setup script
 └── README.md            # This file
 ```
 
@@ -306,3 +344,7 @@ For issues and questions:
 - **v1.0.0**: Initial release with Box search and AI capabilities
 - **v1.1.0**: Added Box Hub Ask functionality
 - **v1.2.0**: Enhanced enterprise focus and professional communication
+- **v1.3.0**: Added Box Doc Gen integration for capital call notices
+- **v1.4.0**: Added FOIA compliance processing with metadata templates
+- **v1.5.0**: Added Box MCP Remote Server integration for enhanced AI capabilities
+- **v1.6.0**: Enhanced workflow assistants and cross-platform MCP support
