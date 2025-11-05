@@ -9,6 +9,51 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def list_available_hubs() -> str:
+    """
+    List all available Box hubs with their IDs and descriptions.
+    Useful for finding hub IDs to use with box_hub_ask.
+    
+    Returns:
+        Formatted string listing all available hubs
+    """
+    try:
+        hubs = get_available_hubs()
+        if not hubs:
+            return "❌ **No Box hubs available.** Please check your Box configuration and permissions."
+        
+        result = f"""📋 **Available Box Hubs ({len(hubs)} hubs found):**
+
+"""
+        for i, hub in enumerate(hubs, 1):
+            hub_id = hub.get('id', 'Unknown')
+            hub_title = hub.get('title', 'Untitled Hub')
+            hub_description = hub.get('description', 'No description available')
+            is_ai_enabled = hub.get('is_ai_enabled', False)
+            
+            result += f"{i}. **{hub_title}**\n"
+            result += f"   • **Hub ID:** `{hub_id}`\n"
+            result += f"   • **Description:** {hub_description}\n"
+            if is_ai_enabled:
+                result += f"   • **AI Enabled:** ✅ Yes\n"
+            result += "\n"
+        
+        result += """**💡 How to use:**
+• Use `box_hub_ask("your question", hub_id="HUB_ID")` to ask a specific hub
+• Or use `box_hub_ask("your question")` to let the agent automatically select the best hub
+• Copy the Hub ID from above to use with the `hub_id` parameter
+
+**Example:**
+```
+box_hub_ask("What are our company policies?", hub_id="123456789")
+```"""
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Error listing hubs: {e}")
+        return f"❌ **Error:** Failed to list available hubs: {str(e)}"
+
 def get_available_hubs() -> list:
     """
     Retrieves all available hubs for the requesting enterprise using the new Box Hubs API.
@@ -141,12 +186,13 @@ def select_best_hub(prompt: str, hubs: list) -> dict:
         logger.info(f"🔄 No specific hub match found, using fallback: {fallback_hub.get('title')}")
         return fallback_hub
 
-def box_hub_ask(prompt: str) -> str:
+def box_hub_ask(prompt: str, hub_id: str = None) -> str:
     """
     Intelligently discovers and uses the most relevant Box Hub to answer the user's question.
     
     Args:
         prompt: The question or prompt to ask the Box Hub.
+        hub_id: Optional specific hub ID to use. If not provided, automatically selects the best hub.
         
     Returns:
         The answer provided by the Box Hub, or an error message.
@@ -154,20 +200,38 @@ def box_hub_ask(prompt: str) -> str:
     try:
         logger.info(f"🔍 Box Hub Ask: '{prompt}'")
         
-        # Step 1: Get all available hubs
-        hubs = get_available_hubs()
-        if not hubs:
-            return "Error: No Box hubs available. Please check your Box configuration and permissions."
-        
-        # Step 2: Select the best hub for this question
-        selected_hub = select_best_hub(prompt, hubs)
-        if not selected_hub:
-            return "Error: Unable to select an appropriate Box hub for your question."
-        
-        hub_id = selected_hub.get('id')
-        hub_title = selected_hub.get('title', 'Unknown Hub')
-        
-        logger.info(f"🎯 Using hub: {hub_title} (ID: {hub_id}) for prompt: '{prompt}'")
+        # If hub_id is provided, use it directly
+        if hub_id:
+            logger.info(f"🎯 Using specified hub ID: {hub_id}")
+            hub_title = f"Hub {hub_id}"
+            # Try to get hub details for better logging
+            try:
+                auth = JWTBoxAuth()
+                headers = auth.get_headers()
+                headers["box-version"] = "2025.0"
+                hub_url = f"https://api.box.com/2.0/hubs/{hub_id}"
+                hub_response = requests.get(hub_url, headers=headers)
+                if hub_response.status_code == 200:
+                    hub_data = hub_response.json()
+                    hub_title = hub_data.get('title', f"Hub {hub_id}")
+                    logger.info(f"📁 Found hub: {hub_title}")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not fetch hub details: {e}, using hub_id directly")
+        else:
+            # Step 1: Get all available hubs
+            hubs = get_available_hubs()
+            if not hubs:
+                return "Error: No Box hubs available. Please check your Box configuration and permissions."
+            
+            # Step 2: Select the best hub for this question
+            selected_hub = select_best_hub(prompt, hubs)
+            if not selected_hub:
+                return "Error: Unable to select an appropriate Box hub for your question."
+            
+            hub_id = selected_hub.get('id')
+            hub_title = selected_hub.get('title', 'Unknown Hub')
+            
+            logger.info(f"🎯 Auto-selected hub: {hub_title} (ID: {hub_id}) for prompt: '{prompt}'")
         
         # Step 3: Initialize JWT authentication
         auth = JWTBoxAuth()

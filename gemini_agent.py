@@ -7,13 +7,21 @@ from google.adk.tools import FunctionTool
 # --- DEFINE YOUR TOOLS HERE ---
 from box_search import box_search, quick_summary_of_files
 from box_ai_ask import box_ai_ask
-from box_hub_ask import box_hub_ask
+from box_hub_ask import box_hub_ask, list_available_hubs
 # Gradually re-enabling Box Doc Gen - adding smart discovery tools
 from box_doc_gen import guide_capital_call_creation, create_sample_lp_data, smart_template_discovery, capital_call_workflow_assistant
 # Adding focused FOIA tools
 from foia_processor import foia_metadata_applier, foia_workflow_assistant, foia_report_generator
 # Adding Box MCP Remote Server tools
-from box_mcp_client import box_mcp_who_am_i, box_mcp_search_files, box_mcp_ai_qa_single_file, box_mcp_ai_qa_multi_file, box_mcp_ai_qa_hub, box_mcp_ai_extract_structured, box_mcp_workflow_assistant
+from box_mcp_client import (
+    box_mcp_who_am_i, box_mcp_search_files, box_mcp_ai_qa_single_file, 
+    box_mcp_ai_qa_multi_file, box_mcp_ai_qa_hub, box_mcp_ai_extract_structured,
+    box_mcp_ai_extract_freeform, box_mcp_get_file_content, box_mcp_get_file_details,
+    box_mcp_upload_file, box_mcp_upload_file_version, box_mcp_create_folder,
+    box_mcp_get_folder_details, box_mcp_list_folder_content, box_mcp_search_folders,
+    box_mcp_list_tasks, box_mcp_get_hub_details, box_mcp_get_hub_items,
+    box_mcp_list_hubs, box_mcp_workflow_assistant
+)
 
 def get_weather(location: str) -> str:
     """Gets the weather for a given location."""
@@ -67,8 +75,10 @@ class GeminiAgent(LlmAgent):
         BOX HUB ASK GUIDELINES:
         - Use the box_hub_ask tool when users want to ask general questions that could be answered by any Box Hub
         - The tool automatically discovers all available hubs and selects the most relevant one
+        - **OPTIONAL HUB ID**: Users can specify a hub_id parameter to use a specific hub directly
+        - Use list_available_hubs to help users find hub IDs if they want to target a specific hub
         - Perfect for questions about company policies, procedures, or general knowledge
-        - No need to specify hub IDs - the tool intelligently selects the best hub
+        - By default, the tool intelligently selects the best hub, but you can specify a hub_id for precision
         - Provides context about which hub was used for the answer
 
         # Temporarily commenting out Box Doc Gen guidelines to isolate the issue
@@ -108,17 +118,19 @@ class GeminiAgent(LlmAgent):
         - **AUDIT TRAIL**: Create complete audit trails for compliance tracking
 
         BOX MCP REMOTE SERVER GUIDELINES:
-        - Use the box_mcp_who_am_i tool when users want to verify their Box user information and permissions
-        - Use the box_mcp_search_files tool when users want enhanced file search with advanced filtering capabilities
-        - Use the box_mcp_ai_qa_single_file tool when users want deep AI analysis of individual documents
-        - Use the box_mcp_ai_qa_multi_file tool when users want cross-document analysis and pattern recognition
-        - Use the box_mcp_ai_qa_hub tool when users want project-level insights and status analysis
-        - Use the box_mcp_ai_extract_structured tool when users want to extract structured data from unstructured documents
+        - **User & Authentication:** Use box_mcp_who_am_i to verify user information and permissions
+        - **File Operations:** Use box_mcp_get_file_content, box_mcp_get_file_details, box_mcp_upload_file, box_mcp_upload_file_version for file management
+        - **Folder Operations:** Use box_mcp_create_folder, box_mcp_get_folder_details, box_mcp_list_folder_content for folder management
+        - **Search:** Use box_mcp_search_files and box_mcp_search_folders for enhanced search with advanced filtering
+        - **Box AI:** Use box_mcp_ai_qa_single_file, box_mcp_ai_qa_multi_file, box_mcp_ai_qa_hub for AI analysis
+        - **Data Extraction:** Use box_mcp_ai_extract_structured or box_mcp_ai_extract_freeform to extract data from documents
+        - **Collaboration:** Use box_mcp_list_tasks to track file-related tasks and collaboration
+        - **Hubs:** Use box_mcp_list_hubs, box_mcp_get_hub_details, box_mcp_get_hub_items for hub management
         - Use the box_mcp_workflow_assistant tool when users want guidance on MCP capabilities and workflows
         - **MCP INTEGRATION**: Leverage Box MCP Remote Server for enhanced AI capabilities and seamless integration
         - **ADVANCED AI**: Use Box AI through MCP for deeper document analysis and insights
         - **STRUCTURED EXTRACTION**: Convert unstructured documents into structured data for better reporting
-        - **CROSS-PLATFORM**: Works with Claude, Copilot Studio, Mistral AI, and other leading AI platforms
+        - **CROSS-PLATFORM**: Works with Claude, Copilot Studio, Mistral AI, GitHub Copilot, Amazon Quick Suite, and more
         - **ENTERPRISE SECURITY**: OAuth 2.0 authentication with enterprise-grade security controls
 
         WORKFLOW RECOMMENDATIONS:
@@ -149,7 +161,8 @@ class GeminiAgent(LlmAgent):
         - get_weather: Get current weather information for a specific location
         - box_search: Enhanced Box search with automatic file ID guidance and clean, user-friendly results
         - box_ai_ask: Ask questions about specific file content using Box AI. Use this for automatic analysis of found files
-        - box_hub_ask: Get answers from the most relevant Box Hub for general questions
+        - box_hub_ask: Get answers from the most relevant Box Hub for general questions. Can optionally specify a hub_id parameter to use a specific hub
+        - list_available_hubs: List all available Box hubs with their IDs and descriptions. Use this to find hub IDs for specific hub queries
         - quick_summary_of_files: Prepare file IDs and provide clean instructions for Box AI Ask analysis. Use this when users ask for "quick summary" or "summarize these files"
         - guide_capital_call_creation: Provide comprehensive guidance on creating capital call notices. Use this to help users understand the process and data requirements
         - create_sample_lp_data: Provide sample LP data structure with detailed explanations. Use this to help users understand how to prepare their data for capital call notices
@@ -160,10 +173,23 @@ class GeminiAgent(LlmAgent):
         - foia_report_generator: Generate comprehensive FOIA compliance reports. Use this to create audit trails and compliance documentation
         - box_mcp_who_am_i: Get detailed information about the currently authenticated Box user via MCP. Use this to verify user permissions and account status
         - box_mcp_search_files: Search for files using keywords via Box MCP server with advanced filtering. Use this for enhanced file discovery
+        - box_mcp_search_folders: Search for folders within Box by name using keyword matching. Use this to find project folders
+        - box_mcp_get_file_content: Get the content of a file stored in Box. Use this to retrieve file contents
+        - box_mcp_get_file_details: Get comprehensive file information including metadata, permissions, and version details. Use this to view file metadata
+        - box_mcp_upload_file: Upload a new file to Box. Use this to add new documents to folders
+        - box_mcp_upload_file_version: Upload a new file version. Use this to update existing files with new versions
+        - box_mcp_create_folder: Create a new folder in Box. Use this to organize content
+        - box_mcp_get_folder_details: Get comprehensive folder information. Use this to view folder metadata and permissions
+        - box_mcp_list_folder_content: List files, folders, and web links in a folder. Use this to browse folder contents
         - box_mcp_ai_qa_single_file: Ask questions to individual files using Box AI via MCP server. Use this for deep document analysis
         - box_mcp_ai_qa_multi_file: Ask questions across multiple files using Box AI via MCP server. Use this for cross-document analysis
         - box_mcp_ai_qa_hub: Ask questions about entire Box Hubs using Box AI via MCP server. Use this for project-level insights
-        - box_mcp_ai_extract_structured: Extract structured metadata from files using Box AI via MCP server. Use this to convert unstructured documents into structured data
+        - box_mcp_ai_extract_structured: Extract structured metadata from files using Box AI via MCP server. Use this to convert unstructured documents into structured data with templates
+        - box_mcp_ai_extract_freeform: Extract metadata from files using Box AI in freeform format. Use this for custom extraction without predefined templates
+        - box_mcp_list_tasks: List all tasks associated with a specific file. Use this to track file-related tasks and collaboration
+        - box_mcp_list_hubs: List all hubs accessible to the authenticated user. Use this to discover available hubs
+        - box_mcp_get_hub_details: Get detailed information about a specific hub. Use this to view hub configuration and metadata
+        - box_mcp_get_hub_items: Get items (files and folders) associated with a specific hub. Use this to view hub contents
         - box_mcp_workflow_assistant: Guide users through Box MCP capabilities and workflows. Use this to understand and utilize MCP tools effectively
         # - foia_request_analyzer: Analyze Enron email data source to identify projects and create knowledge transfer plans. Use this for FOIA request processing
         # - box_foia_processor: Process Box files for FOIA compliance with metadata application and file locking. Use this to apply compliance metadata and security controls
@@ -193,6 +219,7 @@ class GeminiAgent(LlmAgent):
             box_search,
             box_ai_ask,
             box_hub_ask,
+            list_available_hubs,
             quick_summary_of_files,
             guide_capital_call_creation,  # Testing basic Box Doc Gen functionality
             create_sample_lp_data,  # Adding sample data tool
@@ -201,13 +228,26 @@ class GeminiAgent(LlmAgent):
             foia_metadata_applier,  # Adding FOIA metadata application tool
             foia_workflow_assistant,  # Adding FOIA workflow assistant
             foia_report_generator,  # Adding FOIA report generator
-            box_mcp_who_am_i,  # Adding Box MCP user information tool
-            box_mcp_search_files,  # Adding Box MCP search tool
-            box_mcp_ai_qa_single_file,  # Adding Box MCP single file AI analysis
-            box_mcp_ai_qa_multi_file,  # Adding Box MCP multi-file AI analysis
-            box_mcp_ai_qa_hub,  # Adding Box MCP hub AI analysis
-            box_mcp_ai_extract_structured,  # Adding Box MCP structured data extraction
-            box_mcp_workflow_assistant,  # Adding Box MCP workflow assistant
+            box_mcp_who_am_i,  # User & Authentication
+            box_mcp_get_file_content,  # File Operations
+            box_mcp_get_file_details,  # File Operations
+            box_mcp_upload_file,  # File Operations
+            box_mcp_upload_file_version,  # File Operations
+            box_mcp_create_folder,  # Folder Operations
+            box_mcp_get_folder_details,  # Folder Operations
+            box_mcp_list_folder_content,  # Folder Operations
+            box_mcp_search_files,  # Search
+            box_mcp_search_folders,  # Search
+            box_mcp_ai_qa_single_file,  # Box AI
+            box_mcp_ai_qa_multi_file,  # Box AI
+            box_mcp_ai_qa_hub,  # Box AI
+            box_mcp_ai_extract_structured,  # Box AI
+            box_mcp_ai_extract_freeform,  # Box AI
+            box_mcp_list_tasks,  # Collaboration
+            box_mcp_list_hubs,  # Hubs
+            box_mcp_get_hub_details,  # Hubs
+            box_mcp_get_hub_items,  # Hubs
+            box_mcp_workflow_assistant,  # Workflow Assistant
             # foia_request_analyzer,  # Adding FOIA analysis tool
             # box_foia_processor,  # Adding Box FOIA processing tool
             # create_capital_call_notice_batch, # Temporarily commenting out Box Doc Gen tools
